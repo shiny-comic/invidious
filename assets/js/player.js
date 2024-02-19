@@ -23,6 +23,7 @@ var options = {
             'captionsButton',
             'audioTrackButton',
             'qualitySelector',
+            'QualityMenuButton',
             'playbackRateMenuButton',
             'fullscreenToggle'
         ]
@@ -184,6 +185,16 @@ player.on('timeupdate', function () {
     }
 });
 
+player.one('playing', function () {
+
+    if (!video_data.params.listen && video_data.params.quality === 'dash') {
+        var quality_menu_button = document.getElementsByClassName('vjs-quality-menu-button');
+        for (var i = 0; i < quality_menu_button.length; i++) {
+            quality_menu_button[i].className += ' vjs-icon-cog';
+        }
+    }
+});
+
 
 var shareOptions = {
     socials: ['fbFeed', 'tw', 'reddit', 'email'],
@@ -253,8 +264,9 @@ if (isMobile()) {
         operations_bar_element.append(share_element);
 
         if (!video_data.params.listen && video_data.params.quality === 'dash') {
-            var http_source_selector = document.getElementsByClassName('vjs-http-source-selector vjs-menu-button')[0];
+            var http_source_selector = document.getElementsByClassName('vjs-quality-menu-button vjs-menu-button')[0];
             operations_bar_element.append(http_source_selector);
+
         }
     });
 }
@@ -418,7 +430,7 @@ if (video_data.params.autoplay) {
 }
 
 if (!video_data.params.listen && video_data.params.quality === 'dash') {
-    player.httpSourceSelector();
+    var qualityMenuOptions = {}
 
     if (video_data.params.quality_dash !== 'auto') {
         player.ready(function () {
@@ -441,12 +453,13 @@ if (!video_data.params.listen && video_data.params.quality === 'dash') {
                                 break;
                         }
                 }
-                qualityLevels.forEach(function (level, index) {
-                    level.enabled = (index === targetQualityLevel);
-                });
+                qualityMenuOptions.defaultResolution = (qualityLevels[targetQualityLevel].height + "p");
             });
         });
     }
+
+    console.log(qualityMenuOptions)
+    player.qualityMenu(qualityMenuOptions);
 }
 
 player.vttThumbnails({
