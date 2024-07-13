@@ -10,6 +10,7 @@ var options = {
     windowOpacity: ['0', '0.5', '1'],
     textOpacity: ['0.5', '1'],
     persistTextTrackSettings: true,
+    enableSourceset: false,
     controlBar: {
         children: [
             'playToggle',
