@@ -1,3 +1,6 @@
 [submodule "mocks"]
 	path = mocks
 	url = ../mocks
+[submodule "inv_sig_helper"]
+	path = inv_sig_helper
+	url = https://github.com/iv-org/inv_sig_helper
