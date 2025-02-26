@@ -2,7 +2,6 @@
 /dev/
 /lib/
 /bin/
-/cert/
 /.shards/
 /.vscode/
 /invidious
