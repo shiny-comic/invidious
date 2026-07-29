@@ -1,6 +1,17 @@
 <% ucid = video.ucid %>
 <% title = HTML.escape(video.title) %>
 <% author = HTML.escape(video.author) %>
+<% host = env.request.headers["Host"] %>
+<% scheme = env.get("scheme") %>
+<%
+  hidden_set = preferences.hidden_channels.try(&.to_set)
+  filtered_related = video.related_videos.select { |rv|
+    rv["id"]? && (
+      hidden_set.nil? ||
+      !(rv["ucid"]?.try { |u| hidden_set.includes?(u) })
+    )
+  }
+%>
 
 
 <% content_for "header" do %>
@@ -58,7 +69,7 @@ we're going to need to do it here in order to allow for translations.
     "plid" => plid,
     "length_seconds" => video.length_seconds.to_f,
     "play_next" => !video.related_videos.empty? && !plid && params.continue,
-    "next_video" => video.related_videos.select { |rv| rv["id"]? }[0]?.try &.["id"],
+    "next_video" => filtered_related[0]?.try &.["id"],
     "youtube_comments_text" => HTML.escape(I18n.translate(locale, "View YouTube comments")),
     "comments_youtube_disabled_text" => HTML.escape(I18n.translate(locale, "comments_youtube_disabled_text")),
     "comments_youtube_disabled_try_reddit" => HTML.escape(I18n.translate(locale, "comments_youtube_disabled_try_reddit")),
@@ -363,7 +374,7 @@ we're going to need to do it here in order to allow for translations.
                         </div>
                     <% end %>
 
-                    <% video.related_videos.each do |rv| %>
+                    <% filtered_related.each do |rv| %>
                         <% if rv["id"]? %>
                             <div class="pure-u-1">
 
