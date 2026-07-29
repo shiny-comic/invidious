@@ -176,6 +176,12 @@ class Config
   # Use Innertube's transcripts API instead of timedtext for closed captions
   property use_innertube_for_captions : Bool = false
 
+  # (Un)Limit videos per page for invidious playlist
+  property videos_per_page_on_invidious_playlist : Int32 = 100
+
+  # (Un)Limit videos per page for subbed playlist
+  property videos_per_page_on_subbed_playlist : Int32 = 200
+
   # Invidious companion
   property invidious_companion : Array(CompanionConfig) = [] of CompanionConfig
 

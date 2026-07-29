@@ -443,7 +443,7 @@ def get_playlist_videos(playlist : InvidiousPlaylist | Playlist, offset : Int32,
 
     videos = [] of PlaylistVideo | ProblematicTimelineItem
 
-    until videos.size >= 200 || videos.size == playlist.video_count || offset >= playlist.video_count
+    until videos.size >= CONFIG.videos_per_page_on_subbed_playlist || videos.size == playlist.video_count || offset >= playlist.video_count
       # 100 videos per request
       ctoken = produce_playlist_continuation(playlist.id, offset)
       initial_data = YoutubeAPI.browse(ctoken)

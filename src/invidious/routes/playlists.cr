@@ -163,7 +163,7 @@ module Invidious::Routes::Playlists
     end
 
     begin
-      items = get_playlist_videos(playlist, offset: (page - 1) * 100)
+      items = get_playlist_videos(playlist, offset: (page - 1) * CONFIG.videos_per_page_on_invidious_playlist)
     rescue ex
       items = [] of PlaylistVideo
     end
@@ -174,7 +174,7 @@ module Invidious::Routes::Playlists
     page_nav_html = Frontend::Pagination.nav_numeric(locale,
       base_url: "/playlist?list=#{playlist.id}",
       current_page: page,
-      show_next: (items.size == 100)
+      show_next: (items.size == CONFIG.videos_per_page_on_invidious_playlist)
     )
 
     templated "edit_playlist"
@@ -407,11 +407,11 @@ module Invidious::Routes::Playlists
     end
 
     if playlist.is_a? InvidiousPlaylist
-      page_count = (playlist.video_count / 100).to_i
-      page_count += 1 if (playlist.video_count % 100) > 0
+      page_count = (playlist.video_count / CONFIG.videos_per_page_on_invidious_playlist).to_i
+      page_count += 1 if (playlist.video_count % CONFIG.videos_per_page_on_invidious_playlist) > 0
     else
-      page_count = (playlist.video_count / 200).to_i
-      page_count += 1 if (playlist.video_count % 200) > 0
+      page_count = (playlist.video_count / CONFIG.videos_per_page_on_subbed_playlist).to_i
+      page_count += 1 if (playlist.video_count % CONFIG.videos_per_page_on_subbed_playlist) > 0
     end
 
     if page > page_count
@@ -424,9 +424,9 @@ module Invidious::Routes::Playlists
 
     begin
       if playlist.is_a? InvidiousPlaylist
-        items = get_playlist_videos(playlist, offset: (page - 1) * 100)
+        items = get_playlist_videos(playlist, offset: (page - 1) * CONFIG.videos_per_page_on_invidious_playlist)
       else
-        items = get_playlist_videos(playlist, offset: (page - 1) * 200)
+        items = get_playlist_videos(playlist, offset: (page - 1) * CONFIG.videos_per_page_on_subbed_playlist)
       end
     rescue ex
       return error_template(500, "Error encountered while retrieving playlist videos.<br>#{ex.message}")

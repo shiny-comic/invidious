@@ -537,6 +537,16 @@ jobs:
 #use_pubsub_feeds: false
 
 ##
+## Customize videos per page on playlist
+##
+## Note: Bigger number (>200) is NOT recommended for public instances.
+##
+## Accepted values: a positive integer
+## Default: 200
+##
+#videos_per_page_on_subbed_playlist: 200
+
+##
 ## HMAC signing key used for CSRF tokens, cookies and pubsub
 ## subscriptions verification.
 ##
