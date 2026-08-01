@@ -1,33 +1,13 @@
-# https://github.com/openssl/openssl/releases/tag/openssl-3.6.3
-ARG OPENSSL_VERSION='3.6.3'
-ARG OPENSSL_SHA256='243a86649cf6f23eeb6a2ff2456e09e5d77dd9018a54d3d96b0c6bdd6ba6c7f1'
-
-FROM 84codes/crystal:1.20.3-alpine AS dependabot-crystal
-
-# We compile openssl ourselves due to a memory leak in how crystal interacts
-# with openssl
-# Reference: https://github.com/iv-org/invidious/issues/1438#issuecomment-3087636228
-FROM dependabot-crystal AS openssl-builder
-RUN apk add --no-cache curl perl linux-headers
-
-WORKDIR /
-
-ARG OPENSSL_VERSION
-ARG OPENSSL_SHA256
-RUN curl -Ls "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" --output openssl-${OPENSSL_VERSION}.tar.gz
-RUN echo "${OPENSSL_SHA256}  openssl-${OPENSSL_VERSION}.tar.gz" | sha256sum -c
-RUN tar -xzvf openssl-${OPENSSL_VERSION}.tar.gz
-
-RUN cd openssl-${OPENSSL_VERSION} && ./Configure --openssldir=/etc/ssl && make -j$(nproc)
+FROM registry.pinas.lan/84codes-crystal-openssl:1.21.0 AS dependabot-crystal
 
 FROM dependabot-crystal AS builder
 
 RUN apk add --no-cache sqlite-static yaml-static
-RUN apk del openssl-dev openssl-libs-static
 
 ARG release
 
 WORKDIR /invidious
+
 COPY ./shard.yml ./shard.yml
 COPY ./shard.lock ./shard.lock
 RUN shards install --production
@@ -45,23 +25,18 @@ COPY ./videojs-dependencies.yml ./videojs-dependencies.yml
 RUN crystal spec --warnings all \
     --link-flags "-lxml2 -llzma"
 
-ARG OPENSSL_VERSION
-COPY --from=openssl-builder /openssl-${OPENSSL_VERSION} /openssl-${OPENSSL_VERSION}
-
 RUN --mount=type=cache,target=/root/.cache/crystal if [[ "${release}" == 1 ]] ; then \
-        PKG_CONFIG_PATH=/openssl-${OPENSSL_VERSION} \
         crystal build ./src/invidious.cr \
-        --release \
+        --release -s -p -t \
         --static --warnings all \
         --link-flags "-lxml2 -llzma"; \
     else \
-        PKG_CONFIG_PATH=/openssl-${OPENSSL_VERSION} \
         crystal build ./src/invidious.cr \
         --static --warnings all \
         --link-flags "-lxml2 -llzma"; \
     fi
 
-FROM alpine:3.24
+FROM mirror.gcr.io/alpine:3.24
 RUN apk add --no-cache rsvg-convert ttf-opensans tini tzdata
 WORKDIR /invidious
 RUN addgroup -g 1000 -S invidious && \
