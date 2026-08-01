@@ -10,7 +10,8 @@ WORKDIR /invidious
 
 COPY ./shard.yml ./shard.yml
 COPY ./shard.lock ./shard.lock
-RUN shards install --production
+
+RUN --mount=type=cache,target=/root/.cache/shards shards install --production
 
 COPY ./src/ ./src/
 # TODO: .git folder is required for building – this is destructive.
@@ -25,7 +26,7 @@ COPY ./videojs-dependencies.yml ./videojs-dependencies.yml
 RUN crystal spec --warnings all \
     --link-flags "-lxml2 -llzma"
 
-RUN --mount=type=cache,target=/root/.cache/crystal if [[ "${release}" == 1 ]] ; then \
+RUN --mount=type=cache,target=/root/.cache/crystal --mount=type=cache,target=/tmp/crystal-cache if [[ "${release}" == 1 ]] ; then \
         crystal build ./src/invidious.cr \
         --release -s -p -t \
         --static --warnings all \
