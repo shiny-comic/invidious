@@ -1,33 +1,13 @@
-# https://github.com/openssl/openssl/releases/tag/openssl-3.6.4
-ARG OPENSSL_VERSION='3.6.4'
-ARG OPENSSL_SHA256='9bffaa1ad1e07b354c21bd3324ec02fa15579f45a7d0494b3e74bc449b7333ef'
-
-FROM 84codes/crystal:1.21.0-alpine AS dependabot-crystal
-
-# We compile openssl ourselves due to a memory leak in how crystal interacts
-# with openssl
-# Reference: https://github.com/iv-org/invidious/issues/1438#issuecomment-3087636228
-FROM dependabot-crystal AS openssl-builder
-RUN apk add --no-cache curl perl linux-headers
-
-WORKDIR /
-
-ARG OPENSSL_VERSION
-ARG OPENSSL_SHA256
-RUN curl -Ls "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" --output openssl-${OPENSSL_VERSION}.tar.gz
-RUN echo "${OPENSSL_SHA256}  openssl-${OPENSSL_VERSION}.tar.gz" | sha256sum -c
-RUN tar -xzvf openssl-${OPENSSL_VERSION}.tar.gz
-
-RUN cd openssl-${OPENSSL_VERSION} && ./Configure --openssldir=/etc/ssl no-apps && make -j$(nproc)
+FROM registry.pinas.lan/84codes-crystal-openssl:1.21.0 AS dependabot-crystal
 
 FROM dependabot-crystal AS builder
 
 RUN apk add --no-cache sqlite-static yaml-static
-RUN apk del openssl-dev openssl-libs-static
 
 ARG release
 
 WORKDIR /invidious
+
 COPY ./shard.yml ./shard.yml
 COPY ./shard.lock ./shard.lock
 RUN shards install --production
@@ -61,19 +41,17 @@ COPY --from=openssl-builder /openssl-${OPENSSL_VERSION} /openssl-${OPENSSL_VERSI
 #
 # `-no-pie` can be removed once it's fixed.
 RUN --mount=type=cache,target=/root/.cache/crystal if [[ "${release}" == 1 ]] ; then \
-        PKG_CONFIG_PATH=/openssl-${OPENSSL_VERSION} \
         crystal build ./src/invidious.cr \
-        --release \
+        --release -s -p -t \
         --static --warnings all \
         --link-flags "-lxml2 -llzma -no-pie"; \
     else \
-        PKG_CONFIG_PATH=/openssl-${OPENSSL_VERSION} \
         crystal build ./src/invidious.cr \
         --static --warnings all \
         --link-flags "-lxml2 -llzma -no-pie"; \
     fi
 
-FROM alpine:3.24
+FROM mirror.gcr.io/alpine:3.24
 RUN apk add --no-cache rsvg-convert ttf-opensans tini tzdata
 WORKDIR /invidious
 RUN addgroup -g 1000 -S invidious && \
