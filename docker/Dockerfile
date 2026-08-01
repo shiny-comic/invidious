@@ -10,7 +10,8 @@ WORKDIR /invidious
 
 COPY ./shard.yml ./shard.yml
 COPY ./shard.lock ./shard.lock
-RUN shards install --production
+
+RUN --mount=type=cache,target=/root/.cache/shards shards install --production
 
 COPY ./src/ ./src/
 # TODO: .git folder is required for building – this is destructive.
@@ -25,22 +26,7 @@ COPY ./videojs-dependencies.yml ./videojs-dependencies.yml
 RUN crystal spec --warnings all \
     --link-flags "-lxml2 -llzma"
 
-ARG OPENSSL_VERSION
-COPY --from=openssl-builder /openssl-${OPENSSL_VERSION} /openssl-${OPENSSL_VERSION}
-
-# 2026-08-04:
-#
-# `-no-pie` has been added to link flags due to missing debug information
-# when compiling Invidious using `--static` (because `--static` enables PIE, but
-# with PIE enabled, Crystal cannot provide debug information when an error
-# in Invidious appears)
-# References:
-# - https://forum.crystal-lang.org/t/gcc-15-on-alpine-linux-changes-static-to-imply-pie-i-e-static-pie/9074/5?u=fijxu
-# - https://github.com/crystal-lang/distribution-scripts/issues/445
-# - https://github.com/84codes/crystal-packages/issues/41
-#
-# `-no-pie` can be removed once it's fixed.
-RUN --mount=type=cache,target=/root/.cache/crystal if [[ "${release}" == 1 ]] ; then \
+RUN --mount=type=cache,target=/root/.cache/crystal --mount=type=cache,target=/tmp/crystal-cache if [[ "${release}" == 1 ]] ; then \
         crystal build ./src/invidious.cr \
         --release -s -p -t \
         --static --warnings all \
