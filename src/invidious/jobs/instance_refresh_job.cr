@@ -37,6 +37,7 @@ class Invidious::Jobs::InstanceListRefreshJob < Invidious::Jobs::BaseJob
         stats = info["stats"]
 
         next unless info["type"] == "https"
+        next if domain.as_s.matches?(/ygg/i)
         next if bad_uptime?(info["monitor"])
         next if outdated?(stats["software"]["version"])
 
