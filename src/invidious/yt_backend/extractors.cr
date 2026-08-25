@@ -768,7 +768,7 @@ private module Parsers
           .find(nil, &.dig?("thumbnailBadgeViewModel", "text").try { |node|
             {"episodes", "videos", "lessons"}.any? { |str| node.as_s.ends_with?(str) }
           })
-          .try &.dig("thumbnailBadgeViewModel", "text").as_s.to_i(strict: false)
+          .try &.dig("thumbnailBadgeViewModel", "text").as_s.gsub(/\D/, "").to_i? || 0
 
         metadata = item_contents.dig("metadata", "lockupMetadataViewModel")
         title = metadata.dig("title", "content").as_s
