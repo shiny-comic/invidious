@@ -234,6 +234,14 @@ module Invidious::Routing
       get "/companion/*", Routes::Companion, :get_companion
       post "/companion/*", Routes::Companion, :post_companion
       options "/companion/*", Routes::Companion, :options_companion
+      get "/companion_status", do |env|
+        env.response.content_type = "application/json"
+        {
+          configured: CONFIG.invidious_companion.map(&.private_url.to_s),
+          last_used: Invidious::CompanionDebug.last_private_url,
+          last_at: Invidious::CompanionDebug.last_at.try &.to_rfc3339,
+        }.to_json
+      end
     end
   end
 
