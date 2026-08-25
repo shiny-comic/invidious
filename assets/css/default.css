@@ -927,3 +927,31 @@ h1, h2, h3, h4, h5, p,
 #comments-turned-off-on-video-message > p, #comments-disabled-message > p {
   text-align: center;
 }
+
+companion-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.3;
+  vertical-align: middle;
+  border-radius: 999px;
+  opacity: 0.75;
+  background: rgba(127, 127, 127, 0.2);
+  color: inherit;
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* optional: a bit quieter on mobile so the header doesn’t wrap badly */
+@media (max-width: 48em) {
+  .companion-badge {
+    display: block;
+    margin: 0.15rem 0 0;
+    max-width: 100%;
+  }
+}

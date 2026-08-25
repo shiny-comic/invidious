@@ -2,6 +2,29 @@
 # This is needed as we may need to access arbitrary subdomains of ytimg
 private YTIMG_POOLS = {} of String => YoutubeConnectionPool
 
+module Invidious::CompanionDebug
+  extend self
+
+  @@mutex = Mutex.new
+  @@last_private_url : String? = nil
+  @@last_at : Time? = nil
+
+  def record(companion : Config::CompanionConfig)
+    @@mutex.synchronize do
+      @@last_private_url = companion.private_url.to_s
+      @@last_at = Time.utc
+    end
+  end
+
+  def last_private_url : String?
+    @@mutex.synchronize { @@last_private_url }
+  end
+
+  def last_at : Time?
+    @@mutex.synchronize { @@last_at }
+  end
+end
+
 struct YoutubeConnectionPool
   property! url : URI
   property! capacity : Int32
@@ -93,6 +116,7 @@ struct CompanionConnectionPool
       wrapper = CompanionWrapper.new(companion: companion)
       begin
         result = yield wrapper
+        Invidious::CompanionDebug.record(wrapper.companion)
         wrapper.close
         return result
       rescue ex
