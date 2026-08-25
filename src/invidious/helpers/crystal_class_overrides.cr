@@ -81,3 +81,19 @@ class PG::ResultSet
     @fields.not_nil![index]
   end
 end
+
+class HTTP::Client
+  def close
+    previous_def
+  rescue ex : OpenSSL::SSL::Error
+    if ex.message.try &.includes?("SSL_shutdown") ||
+       ex.message.try &.includes?("Unknown or no error")
+      puts  "Ignored benign SSL_shutdown error on HTTP::Client#close: #{ex.message}"
+    else
+      raise ex
+    end
+  rescue IO::Error
+    # already closed / broken pipe - fine on teardown
+  end
+end
+
