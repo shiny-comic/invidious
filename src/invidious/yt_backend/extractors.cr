@@ -84,6 +84,32 @@ private module Parsers
         author_id = author_fallback.id
       end
 
+      # Collab / multi-author fallback – try to grab the first real channel ID
+      if author_id.nil? || author_id.empty?
+        # Path used by many collab cards
+        author_id = item_contents.dig?(
+          "shortBylineText", "runs", 0,
+          "navigationEndpoint", "showDialogCommand",
+          "panelLoadingStrategy", "inlineContent", "dialogViewModel",
+          "customContent", "listViewModel", "listItems", 0,
+          "listItemViewModel", "rendererContext", "commandContext",
+          "onTap", "innertubeCommand", "browseEndpoint", "browseId"
+        ).try &.as_s
+
+        # Alternative path (ownerText)
+        author_id ||= item_contents.dig?(
+          "ownerText", "runs", 0,
+          "navigationEndpoint", "showDialogCommand",
+          "panelLoadingStrategy", "inlineContent", "dialogViewModel",
+          "customContent", "listViewModel", "listItems", 0,
+          "listItemViewModel", "title", "commandRuns", 0,
+          "onTap", "innertubeCommand", "browseEndpoint", "browseId"
+        ).try &.as_s
+
+        # Last resort – keep the fallback
+        author_id ||= author_fallback.id
+      end
+
       author_thumbnail = item_contents.dig?("channelThumbnailSupportedRenderers", "channelThumbnailWithLinkRenderer", "thumbnail", "thumbnails", 0, "url").try &.as_s
 
       author_verified = has_verified_badge?(item_contents["ownerBadges"]?)

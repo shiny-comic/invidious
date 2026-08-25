@@ -63,6 +63,8 @@ module Invidious::Routing
     get "/preferences", Routes::PreferencesRoute, :show
     post "/preferences", Routes::PreferencesRoute, :update
     get "/toggle_theme", Routes::PreferencesRoute, :toggle_theme
+    post "/toggle_hidden_channel", Routes::PreferencesRoute, :toggle_hidden_channel
+    get "/toggle_hidden_channel_visibility", Routes::PreferencesRoute, :toggle_hidden_channel_visibility
     get "/data_control", Routes::PreferencesRoute, :data_control
     post "/data_control", Routes::PreferencesRoute, :update_data_control
 

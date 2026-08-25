@@ -57,6 +57,8 @@ struct Preferences
   property extend_desc : Bool = CONFIG.default_user_preferences.extend_desc
   property volume : Int32 = CONFIG.default_user_preferences.volume
   property save_player_pos : Bool = CONFIG.default_user_preferences.save_player_pos
+  property hidden_channels : Array(String)? = nil
+  property show_hidden_channels : Bool = false
   property default_playlist : String? = nil
   property search_privacy : Bool = CONFIG.default_user_preferences.search_privacy
 

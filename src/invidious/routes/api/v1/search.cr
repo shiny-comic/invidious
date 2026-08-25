@@ -1,6 +1,7 @@
 module Invidious::Routes::API::V1::Search
   def self.search(env)
     locale = env.get("preferences").as(Preferences).locale
+    preferences = env.get("preferences").as(Preferences)
     region = env.params.query["region"]?
 
     env.response.content_type = "application/json"
@@ -11,6 +12,22 @@ module Invidious::Routes::API::V1::Search
       search_results = query.process
     rescue ex
       return error_json(400, ex)
+    end
+
+    # Filter hidden channels (same logic as the web search route)
+    unless preferences.show_hidden_channels
+      if hidden_set = preferences.hidden_channels.try &.to_set
+        search_results = search_results.reject do |item|
+          ucid = if item.responds_to?(:ucid)
+                   item.ucid
+                 elsif item.is_a?(Hash) || item.is_a?(JSON::Any)
+                   item["ucid"]?.try &.to_s || item["authorId"]?.try &.to_s
+                 else
+                   nil
+                 end
+          ucid && hidden_set.includes?(ucid)
+        end
+      end
     end
 
     JSON.build do |json|

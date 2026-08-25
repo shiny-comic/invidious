@@ -3,7 +3,7 @@ require "json"
 module Invidious::JSONify::APIv1
   extend self
 
-  def video(video : Video, json : JSON::Builder, *, locale : String?, proxy : Bool = false)
+  def video(video : Video, json : JSON::Builder, *, locale : String?, proxy : Bool = false, preferences : Preferences? = nil)
     json.object do
       json.field "type", video.video_type
 
@@ -235,7 +235,17 @@ module Invidious::JSONify::APIv1
 
       json.field "recommendedVideos" do
         json.array do
-          video.related_videos.each do |rv|
+          related = video.related_videos
+          if preferences && !preferences.show_hidden_channels
+            if hidden_set = preferences.hidden_channels.try &.to_set
+              related = related.reject do |rv|
+                ucid = rv["ucid"]?
+                ucid && hidden_set.includes?(ucid)
+              end
+            end
+          end
+
+          related.each do |rv|
             if rv["id"]?
               json.object do
                 json.field "videoId", rv["id"]

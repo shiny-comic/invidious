@@ -1,0 +1,32 @@
+<% preferences = env.get("preferences").as(Preferences) %>
+<% locale = preferences.locale %>
+
+<% ucid = ucid.to_s.gsub(/["']/, "").strip %>
+<% already_hidden = preferences.hidden_channels.try &.includes?(ucid) || false %>
+
+<%-
+  path = env.request.path
+  # Pages where we never want the per-item CBB
+  skip = path.starts_with?("/feed/subscriptions") ||
+         path.starts_with?("/feed/playlists") ||
+         path.starts_with?("/playlist") ||
+         path.starts_with?("/channel/") ||
+         path.starts_with?("/c/") ||
+         path.starts_with?("/user/")
+-%>
+<% if !skip %>
+<form method="post"
+      action="/toggle_hidden_channel"
+      data-ucid=<%= HTML.escape(ucid) %>
+      style="display:inline; margin-left:0.25em; vertical-align:middle">
+    <input type="hidden" name="ucid" value=<%= HTML.escape(ucid) %>>
+    <input type="hidden" name="referer" value=<%= HTML.escape( (env.get?("current_page") || env.request.resource).to_s ) %>>
+
+    <button type="submit"
+            class="pure-button hide-channel-btn"
+            title="<%= already_hidden ? I18n.translate(locale, "Unhide this channel") : I18n.translate(locale, "Hide this channel") %>"
+            style="padding:0 0.3em; background:transparent; border:none; color:inherit; cursor:pointer; line-height:1">
+            <i class="icon <%= already_hidden ? "ion-md-undo" : "ion-md-close-circle" %>"></i>
+    </button>
+</form>
+<% end %>

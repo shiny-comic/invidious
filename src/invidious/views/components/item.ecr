@@ -23,7 +23,10 @@
                     <p class="channel-name" dir="auto"><%= HTML.escape(item.author) %>
                         <%- if author_verified %>&nbsp;<i class="icon ion ion-md-checkmark-circle"></i><% end -%>
                     </p>
-                </a></div>
+                </a>
+                <% ucid = item.ucid %>
+                <%= rendered "components/hide_channel_button" %>
+                </div>
             </div>
 
             <% if !item.channel_handle.nil? %><p class="channel-name" dir="auto"><%= item.channel_handle %></p><% end %>
@@ -94,6 +97,8 @@
                             <%- if author_verified %>&nbsp;<i class="icon ion ion-md-checkmark-circle"></i><% end -%>
                         </p>
                     <% end %>
+                    <% ucid = item.ucid %>
+                    <%= rendered "components/hide_channel_button" %>
                 </div>
             </div>
         <% when Category %>
@@ -192,6 +197,8 @@
                             <%- if author_verified %>&nbsp;<i class="icon ion ion-md-checkmark-circle"></i><% end -%>
                         </p>
                     <% end %>
+                    <% ucid = item.ucid %>
+                    <%= rendered "components/hide_channel_button" %>
                 </div>
 
                 <%= rendered "components/video-context-buttons" %>

@@ -54,6 +54,9 @@ struct ConfigPreferences
   property show_nick : Bool = true
   property save_player_pos : Bool = false
   @[YAML::Field(ignore: true)]
+  property hidden_channels : Array(String)? = nil
+  property show_hidden_channels : Bool = false
+  @[YAML::Field(ignore: true)]
   property default_playlist : String? = nil
   property search_privacy : Bool = false
 

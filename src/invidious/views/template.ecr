@@ -52,6 +52,17 @@
                             </a>
                         </div>
                         <div class="pure-u-1-4">
+                            <a href="/toggle_hidden_channel_visibility?referer=<%= env.get?("current_page") %>"
+                               class="pure-menu-heading"
+                               title="<%= preferences.show_hidden_channels ? "Hide blocked channels again" : "Show blocked channels temporarily" %>">
+                               <% if preferences.show_hidden_channels %>
+                                   <i class="icon ion-md-eye"></i>
+                               <% else %>
+                                   <i class="icon ion-md-eye-off"></i>
+                               <% end %>
+                            </a>
+                        </div>
+                        <div class="pure-u-1-4">
                             <a id="notification_ticker" title="<%= I18n.translate(locale, "Subscriptions") %>" href="/feed/subscriptions" class="pure-menu-heading">
                                 <% notification_count = env.get("user").as(Invidious::User).notifications.size %>
                                 <% if CONFIG.enable_user_notifications && notification_count > 0 %>
@@ -87,6 +98,17 @@
                                 <% else %>
                                     <i class="icon ion-ios-moon"></i>
                                 <% end %>
+                            </a>
+                        </div>
+                        <div class="pure-u-1-3">
+                            <a href="/toggle_hidden_channel_visibility?referer=<%= env.get?("current_page") %>"
+                               class="pure-menu-heading"
+                               title="<%= preferences.show_hidden_channels ? "Hide blocked channels again" : "Show blocked channels temporarily" %>">
+                               <% if preferences.show_hidden_channels %>
+                                   <i class="icon ion-md-eye"></i>
+                               <% else %>
+                                   <i class="icon ion-md-eye-off"></i>
+                               <% end %>
                             </a>
                         </div>
                         <div class="pure-u-1-3">

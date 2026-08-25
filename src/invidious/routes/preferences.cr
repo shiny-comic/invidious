@@ -152,6 +152,30 @@ module Invidious::Routes::PreferencesRoute
     search_privacy ||= "off"
     search_privacy = search_privacy == "on"
 
+    hidden_channels = env.params.body["hidden_channels"]?.try &.as(String)
+    if hidden_channels
+      hidden_channels = hidden_channels.split("\n")
+
+      delete = [] of Int32
+      hidden_channels.each_with_index do |ucid, idx|
+        u = ucid.rstrip("\r").rstrip(" ")
+
+        if (u == "") || (u == "\r")
+          delete << idx
+          next
+        end
+
+        # 24 is the length of channel UCIDs
+        if u.size != 24
+          raise InfoException.new("Channel ID has to be 25 characters long!")
+        else
+          hidden_channels[idx] = u
+        end
+      end
+
+      delete.reverse_each { |i| hidden_channels.delete_at(i) }
+    end
+
     # Convert to JSON and back again to take advantage of converters used for compatibility
     preferences = Preferences.from_json({
       annotations:                 annotations,
@@ -191,6 +215,7 @@ module Invidious::Routes::PreferencesRoute
       save_player_pos:             save_player_pos,
       default_playlist:            default_playlist,
       search_privacy:              search_privacy,
+      hidden_channels:             hidden_channels,
     }.to_json)
 
     if user = env.get? "user"
@@ -280,6 +305,82 @@ module Invidious::Routes::PreferencesRoute
         env.response.cookies["PREFS"] = Invidious::User::Cookies.prefs(CONFIG.alternative_domains[alt], preferences)
       else
         env.response.cookies["PREFS"] = Invidious::User::Cookies.prefs(CONFIG.domain, preferences)
+      end
+    end
+
+    if redirect
+      env.redirect referer
+    else
+      env.response.content_type = "application/json"
+      "{}"
+    end
+  end
+
+  def self.toggle_hidden_channel(env)
+    preferences = env.get("preferences").as(Preferences)
+    ucid = env.params.body["ucid"]?.try &.as(String).to_s
+    referer = env.params.body["referer"]? || "/"
+    referer = URI.decode_www_form(referer) if referer.includes?("%")
+
+    unless ucid && ucid.matches?(/^UC[\w-]{22}$/)
+      return env.redirect referer
+    end
+
+    hidden = preferences.hidden_channels.try &.dup || [] of String
+
+    if hidden.includes?(ucid)
+      hidden.delete(ucid)
+    else
+      hidden << ucid
+    end
+
+    preferences.hidden_channels = hidden.empty? ? nil : hidden
+
+    if user = env.get?("user")
+      user = user.as(User)
+      user.preferences = preferences
+      Invidious::Database::Users.update_preferences(user)
+    else
+      host = env.get("header_x-forwarded-host")
+
+      if alt = CONFIG.alternative_domains.index(host)
+        env.response.cookies["PREFS"] = Invidious::User::Cookies.prefs(
+          CONFIG.alternative_domains[alt], preferences
+        )
+      else
+        env.response.cookies["PREFS"] = Invidious::User::Cookies.prefs(
+          CONFIG.domain, preferences
+        )
+      end
+    end
+
+    env.redirect referer
+  end
+
+  def self.toggle_hidden_channel_visibility(env)
+    preferences = env.get("preferences").as(Preferences)
+    referer = get_referer(env, unroll: false)
+
+    redirect = env.params.query["redirect"]?
+    redirect ||= "true"
+    redirect = redirect == "true"
+
+    preferences.show_hidden_channels = !preferences.show_hidden_channels
+
+    if user = env.get?("user")
+      user = user.as(User)
+      user.preferences = preferences
+      Invidious::Database::Users.update_preferences(user)
+    else
+      host = env.get("header_x-forwarded-host")
+      if alt = CONFIG.alternative_domains.index(host)
+        env.response.cookies["PREFS"] = Invidious::User::Cookies.prefs(
+          CONFIG.alternative_domains[alt], preferences
+        )
+      else
+        env.response.cookies["PREFS"] = Invidious::User::Cookies.prefs(
+          CONFIG.domain, preferences
+        )
       end
     end
 

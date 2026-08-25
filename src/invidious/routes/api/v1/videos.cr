@@ -5,6 +5,7 @@ module Invidious::Routes::API::V1::Videos
   private CHARS_SAFE           = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
   def self.videos(env)
+    preferences = env.get("preferences").as(Preferences)
     locale = env.get("preferences").as(Preferences).locale
 
     env.response.content_type = "application/json"
@@ -22,7 +23,7 @@ module Invidious::Routes::API::V1::Videos
     end
 
     return JSON.build do |json|
-      Invidious::JSONify::APIv1.video(video, json, locale: locale, proxy: proxy)
+      Invidious::JSONify::APIv1.video(video, json, locale: locale, proxy: proxy, preferences: preferences)
     end
   end
 

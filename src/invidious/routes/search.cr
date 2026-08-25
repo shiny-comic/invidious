@@ -70,6 +70,25 @@ module Invidious::Routes::Search
         else
           items = query.process
         end
+
+        original_count = items.size
+
+        hidden_set = preferences.hidden_channels.try &.to_set
+        unless preferences.show_hidden_channels
+          if hidden_set
+            items = items.reject do |item|
+              ucid =
+                if item.responds_to?(:ucid)
+                  item.ucid
+                elsif item.is_a?(Hash) || item.is_a?(JSON::Any)
+                  item["ucid"]?.try &.to_s
+                else
+                  nil
+                end
+              ucid && hidden_set.includes?(ucid)
+            end
+          end
+        end
       rescue ex : ChannelSearchException
         return error_template(404, "Unable to find channel with id of '#{HTML.escape(ex.channel)}'. Are you sure that's an actual channel id? It should look like 'UC4QobU6STFB0P71PMvOGN5A'.")
       rescue ex
@@ -82,7 +101,7 @@ module Invidious::Routes::Search
       page_nav_html = Frontend::Pagination.nav_numeric(locale,
         base_url: "/search?#{query.to_http_params}",
         current_page: query.page,
-        show_next: (items.size >= 20)
+        show_next: (original_count >= 20)
       )
 
       if query.type == Invidious::Search::Query::Type::Channel
@@ -96,6 +115,7 @@ module Invidious::Routes::Search
   end
 
   def self.hashtag(env : HTTP::Server::Context)
+    preferences = env.get("preferences").as(Preferences)
     locale = env.get("preferences").as(Preferences).locale
 
     hashtag = env.params.url["hashtag"]?
@@ -113,6 +133,24 @@ module Invidious::Routes::Search
 
     begin
       items = Invidious::Hashtag.fetch(hashtag, page)
+      original_count = items.size
+
+      hidden_set = preferences.hidden_channels.try &.to_set
+      unless preferences.show_hidden_channels
+        if hidden_set
+          items = items.reject do |item|
+            ucid =
+              if item.responds_to?(:ucid)
+                item.ucid
+            elsif item.is_a?(Hash) || item.is_a?(JSON::Any)
+              item["ucid"]?.try &.to_s
+            else
+              nil
+            end
+            ucid && hidden_set.includes?(ucid)
+          end
+        end
+      end
     rescue ex
       return error_template(500, ex)
     end
@@ -122,7 +160,7 @@ module Invidious::Routes::Search
     page_nav_html = Frontend::Pagination.nav_numeric(locale,
       base_url: "/hashtag/#{hashtag_encoded}",
       current_page: page,
-      show_next: (items.size >= 60)
+      show_next: (original_count >= 60)
     )
 
     templated "hashtag"
