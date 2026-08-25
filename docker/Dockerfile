@@ -26,7 +26,11 @@ COPY ./videojs-dependencies.yml ./videojs-dependencies.yml
 RUN crystal spec --warnings all \
     --link-flags "-lxml2 -llzma"
 
-RUN --mount=type=cache,target=/root/.cache/crystal --mount=type=cache,target=/tmp/crystal-cache if [[ "${release}" == 1 ]] ; then \
+ARG TARGETARCH
+ARG TARGETVARIANT
+RUN --mount=type=cache,id=crystal-${TARGETARCH}${TARGETVARIANT},target=/root/.cache/crystal,sharing=locked \
+  --mount=type=cache,id=tmp-crystal-${TARGETARCH}${TARGETVARIANT},target=/tmp/crystal-cache,sharing=locked \
+  if [[ "${release}" == 1 ]] ; then \
         crystal build ./src/invidious.cr \
         --release -s -p -t \
         --static --warnings all \
