@@ -300,7 +300,9 @@ struct Video
   predicate_bool upcoming, isUpcoming
 end
 
-def get_video(id, refresh = true, region = nil, force_refresh = false)
+def get_video(id, refresh = true, region = nil, force_refresh = false, no_cache = false)
+    force_refresh = true if no_cache
+
   if (video = Invidious::Database::Videos.select(id)) && !region
     # If record was last updated over 10 minutes ago, or video has since premiered,
     # refresh (expire param in response lasts for 6 hours)
@@ -310,7 +312,7 @@ def get_video(id, refresh = true, region = nil, force_refresh = false)
        force_refresh ||
        video.schema_version != Video::SCHEMA_VERSION # cache control
       begin
-        video = fetch_video(id, region)
+        video = fetch_video(id, region, no_cache: no_cache)
         Invidious::Database::Videos.update(video)
       rescue ex
         Invidious::Database::Videos.delete(id)
@@ -318,7 +320,7 @@ def get_video(id, refresh = true, region = nil, force_refresh = false)
       end
     end
   else
-    video = fetch_video(id, region)
+    video = fetch_video(id, region, no_cache: no_cache)
     Invidious::Database::Videos.insert(video) if !region
   end
 
@@ -329,8 +331,8 @@ rescue DB::Error
   return fetch_video(id, region)
 end
 
-def fetch_video(id, region)
-  info = Invidious::Videos::Parser.extract_video_info(video_id: id)
+def fetch_video(id, region, no_cache = false)
+  info = Invidious::Videos::Parser.extract_video_info(video_id: id, override_cache: no_cache)
 
   if info.nil?
     raise InfoException.new("Invidious companion is not available. \

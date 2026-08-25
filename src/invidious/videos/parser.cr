@@ -55,9 +55,9 @@ module Invidious::Videos::Parser
     }
   end
 
-  def extract_video_info(video_id : String)
+  def extract_video_info(video_id : String, override_cache : Bool = false)
     # Fetch data from the player endpoint
-    player_response = YoutubeAPI.player(video_id: video_id)
+    player_response = YoutubeAPI.player(video_id: video_id, override_cache: override_cache)
 
     if player_response.nil?
       return nil

@@ -44,14 +44,21 @@ module Invidious::Routes::Watch
     params = Invidious::Videos.process_video_params(env.params.query, preferences)
     env.params.query.delete_all("listen")
 
+    no_cache = env.params.query["no_cache"]? == "true"
+
     begin
-      video = get_video(id, region: params.region)
+      video = get_video(id, region: params.region, no_cache: no_cache)
     rescue ex : NotFoundException
       LOGGER.error("get_video not found: #{id} : #{ex.message}")
       return error_template(404, ex)
     rescue ex
       LOGGER.error("get_video: #{id} : #{ex.message}")
       return error_template(500, ex)
+    end
+
+    if no_cache
+      env.params.query.delete_all("no_cache")
+      return env.redirect "/watch?#{env.params.query}"
     end
 
     if preferences.annotations_subscribed &&

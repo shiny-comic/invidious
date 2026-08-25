@@ -113,6 +113,11 @@ we're going to need to do it here in order to allow for translations.
             </a>
         <% end %>
     </h1>
+    <p class="pure-form">
+        <a href="/watch?v=<%= video.id %>&amp;no_cache=true<% if params.quality %>&amp;quality=<%= HTML.escape(params.quality) %><% end %>">
+          Refresh streams (bypass cache)
+        </a>
+    </p>
 
     <% if !video.is_listed %>
         <h3>

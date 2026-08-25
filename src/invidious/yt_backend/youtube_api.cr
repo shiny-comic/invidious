@@ -457,11 +457,12 @@ module YoutubeAPI
   #
   # The requested data is a video ID (`v=` parameter).
   #
-  def player(video_id : String)
+  def player(video_id : String, override_cache : Bool = false)
     # JSON Request data, required by Invidious Companion
     data = {
       "videoId" => video_id,
     }
+    data["override_cache"] = "true" if override_cache
 
     if CONFIG.invidious_companion.present?
       return self._post_invidious_companion("/youtubei/v1/player", data)
