@@ -28,6 +28,29 @@ module Invidious::Videos::Parser
 
     ucid = channel_info.try { |ci| HelperExtractors.get_browse_id(ci) }
 
+    # Collab fallback: dig into the multi-author dialog structure
+    if ucid.nil? || ucid.empty?
+      # Common path used by YouTube for "Channel A and Channel B"
+      ucid = related.dig?(
+        "shortBylineText", "runs", 0,
+        "navigationEndpoint", "showDialogCommand",
+        "panelLoadingStrategy", "inlineContent", "dialogViewModel",
+        "customContent", "listViewModel", "listItems", 0,
+        "listItemViewModel", "rendererContext", "commandContext",
+        "onTap", "innertubeCommand", "browseEndpoint", "browseId"
+      ).try &.as_s
+
+      # Alternative path some responses use
+      ucid ||= related.dig?(
+        "ownerText", "runs", 0,
+        "navigationEndpoint", "showDialogCommand",
+        "panelLoadingStrategy", "inlineContent", "dialogViewModel",
+        "customContent", "listViewModel", "listItems", 0,
+        "listItemViewModel", "title", "commandRuns", 0,
+        "onTap", "innertubeCommand", "browseEndpoint", "browseId"
+      ).try &.as_s
+    end
+
     short_view_count = related.try do |r|
       HelperExtractors.get_short_view_count(r).to_s
     end
