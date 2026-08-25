@@ -66,41 +66,43 @@ struct CompanionWrapper
 end
 
 struct CompanionConnectionPool
-  property pool : DB::Pool(CompanionWrapper)
+  # property pool : DB::Pool(CompanionWrapper)
 
   def initialize(capacity = 5, timeout = 5.0)
-    options = DB::Pool::Options.new(
-      initial_pool_size: 0,
-      max_pool_size: capacity,
-      max_idle_pool_size: capacity,
-      checkout_timeout: timeout
-    )
-
-    @pool = DB::Pool(CompanionWrapper).new(options) do
-      companion = CONFIG.invidious_companion.sample
-      make_client(companion.private_url, use_http_proxy: false)
-      CompanionWrapper.new(companion: companion)
-    end
+    # options = DB::Pool::Options.new(
+    #   initial_pool_size: 0,
+    #   max_pool_size: capacity,
+    #   max_idle_pool_size: capacity,
+    #   checkout_timeout: timeout
+    # )
+    #
+    # @pool = DB::Pool(CompanionWrapper).new(options) do
+    #   companion = CONFIG.invidious_companion.sample
+    #   make_client(companion.private_url, use_http_proxy: false)
+    #   CompanionWrapper.new(companion: companion)
+    # end
   end
 
   def client(&)
-    wrapper = pool.checkout
+    companions = CONFIG.invidious_companion
+    raise "No invidious_companion configured" if companions.empty?
 
-    begin
-      response = yield wrapper
-    rescue ex
-      wrapper.close
+    last_ex : Exception? = nil
 
-      companion = CONFIG.invidious_companion.sample
-      make_client(companion.private_url, use_http_proxy: false)
+    companions.shuffle.each do |companion|
       wrapper = CompanionWrapper.new(companion: companion)
-
-      response = yield wrapper
-    ensure
-      pool.release(wrapper)
+      begin
+        result = yield wrapper
+        wrapper.close
+        return result
+      rescue ex
+        last_ex = ex
+        LOGGER.warn("companion #{companion.private_url} failed: #{ex.message}")
+        wrapper.close
+      end
     end
 
-    response
+    raise last_ex.not_nil!
   end
 end
 
