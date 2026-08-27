@@ -44,6 +44,14 @@ module Invidious::Routes::Watch
     params = Invidious::Videos.process_video_params(env.params.query, preferences)
     env.params.query.delete_all("listen")
 
+    # iOS Safari DASH --> HLS
+    ua = env.request.headers["User-Agent"]? || ""
+    if ua.matches?(/iPhone|iPad|iPod/i) &&
+            !params.listen &&
+            (params.quality == "dash" || params.quality == "auto")
+        params.quality = "hls"
+    end
+
     no_cache = env.params.query["no_cache"]? == "true"
 
     begin
