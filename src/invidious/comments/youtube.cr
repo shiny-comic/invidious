@@ -1,6 +1,20 @@
 module Invidious::Comments
   extend self
 
+  def proxy_ggpht_url(url : String?) : String?
+      return nil if url.nil? || url.empty?
+
+      return url if url.starts_with?("/ggpht") || url.includes?("/ggpht/")
+
+      begin
+          uri = URI.parse(url)
+          path = uri.request_target
+          "#{HOST_URL}/ggpht#{path}"
+      rescue
+          url
+      end
+  end
+
   def fetch_youtube(id, cursor, format, locale, thin_mode, region, sort_by = "top")
     case cursor
     when nil, ""
@@ -157,7 +171,18 @@ module Invidious::Comments
                     json.field "authorUrl", "/channel/#{comment_author["channelId"].as_s}"
                     json.field "author", comment_author["displayName"].as_s
                     json.field "verified", comment_author["isVerified"].as_bool
-                    json.field "authorThumbnail", comment_author["avatarThumbnailUrl"].as_s
+                    # json.field "authorThumbnail", comment_author["avatarThumbnailUrl"].as_s
+                    thumb = proxy_ggpht_url(comment_author["avatarThumbnailUrl"].as_s)
+                    json.field "authorThumbnail", thumb
+                    json.field "authorThumbnails" do
+                        json.array do
+                            json.object do
+                                json.field "url", thumb
+                                json.field "width", 88
+                                json.field "height", 88
+                            end
+                        end
+                    end
 
                     json.field "authorIsChannelOwner", comment_author["isCreator"].as_bool
                     json.field "isSponsor", (comment_author["sponsorBadgeUrl"]? != nil)
