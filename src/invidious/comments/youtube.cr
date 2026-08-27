@@ -1,18 +1,20 @@
 module Invidious::Comments
   extend self
 
-  def proxy_ggpht_url(url : String?) : String?
-      return nil if url.nil? || url.empty?
+  def proxy_ggpht_url_for_api(url : String?) : String?
+    return nil if url.nil? || url.empty?
+    return url if url.starts_with?("#{HOST_URL}/ggpht") || url.starts_with?("/ggpht")
 
-      return url if url.starts_with?("/ggpht") || url.includes?("/ggpht/")
-
-      begin
-          uri = URI.parse(url)
-          path = uri.request_target
-          "#{HOST_URL}/ggpht#{path}"
-      rescue
-          url
-      end
+    begin
+      uri = URI.parse(url)
+      host = uri.host || ""
+      return url unless host.ends_with?("ggpht.com") || host.ends_with?("googleusercontent.com")
+      path = uri.request_target
+      path = path.lchop("/ggpht") if path.starts_with?("/ggpht/")
+      "#{HOST_URL}/ggpht#{path}"
+    rescue
+      url
+    end
   end
 
   def fetch_youtube(id, cursor, format, locale, thin_mode, region, sort_by = "top")
@@ -77,6 +79,7 @@ module Invidious::Comments
 
   def parse_youtube(id, response, format, locale, thin_mode, sort_by = "top", is_post = false)
     contents = nil
+    proxy_avatars = (format === "json")
 
     if on_response_received_endpoints = response["onResponseReceivedEndpoints"]?
       header = nil
@@ -171,17 +174,17 @@ module Invidious::Comments
                     json.field "authorUrl", "/channel/#{comment_author["channelId"].as_s}"
                     json.field "author", comment_author["displayName"].as_s
                     json.field "verified", comment_author["isVerified"].as_bool
-                    # json.field "authorThumbnail", comment_author["avatarThumbnailUrl"].as_s
-                    thumb = proxy_ggpht_url(comment_author["avatarThumbnailUrl"].as_s)
+                    raw_thumb = comment_author["avatarThumbnailUrl"].as_s
+                    thumb = proxy_avatars ? proxy_ggpht_url_for_api(raw_thumb) : raw_thumb
                     json.field "authorThumbnail", thumb
                     json.field "authorThumbnails" do
-                        json.array do
-                            json.object do
-                                json.field "url", thumb
-                                json.field "width", 88
-                                json.field "height", 88
-                            end
+                      json.array do
+                        json.object do
+                          json.field "url", thumb
+                          json.field "width", 88
+                          json.field "height", 88
                         end
+                      end
                     end
 
                     json.field "authorIsChannelOwner", comment_author["isCreator"].as_bool
@@ -228,7 +231,8 @@ module Invidious::Comments
                     json.array do
                       node_comment["authorThumbnail"]["thumbnails"].as_a.each do |thumbnail|
                         json.object do
-                          json.field "url", thumbnail["url"]
+                          raw = thumbnail["url"].as_s
+                          json.field "url", (proxy_avatars ? proxy_ggpht_url_for_api(raw) : raw)
                           json.field "width", thumbnail["width"]
                           json.field "height", thumbnail["height"]
                         end
