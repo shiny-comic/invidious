@@ -189,3 +189,11 @@ function get_youtube_replies(target, load_more, load_replies) {
         }
     });
 }
+
+if (video_data.comments_enabled !== false) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', get_youtube_comments);
+    } else {
+        get_youtube_comments();
+    }
+}

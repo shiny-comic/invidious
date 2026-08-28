@@ -186,13 +186,8 @@ addEventListener('load', function (e) {
         return;
     }
 
-    if (video_data.params.comments[0] === 'youtube') {
-        get_youtube_comments();
-    } else if (video_data.params.comments[0] === 'reddit') {
-        get_reddit_comments();
-    } else if (video_data.params.comments[1] === 'youtube') {
-        get_youtube_comments();
-    } else if (video_data.params.comments[1] === 'reddit') {
+    // YT comments are already fetched in comments.js:193
+    if (video_data.params.comments[0] === 'reddit' || video_data.params.comments[1] === 'reddit') {
         get_reddit_comments();
     }
 });
