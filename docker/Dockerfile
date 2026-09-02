@@ -1,4 +1,4 @@
-FROM registry.pinas.lan/84codes-crystal-openssl:1.21.0 AS dependabot-crystal
+FROM registry.pinas.lan/84codes-crystal-openssl:1.21.0-ssl4-install AS dependabot-crystal
 
 FROM dependabot-crystal AS builder
 
