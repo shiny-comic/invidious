@@ -46,6 +46,32 @@ module Invidious::Database::Playlists
     PG_DB.exec(request, title, privacy, description, updated, id)
   end
 
+  def update_metadata(id : String, *, thumbnail_id : String? = nil, video_count : Int32? = nil, title : String? = nil)
+    sets = [] of String
+    args = [] of DB::Any
+
+    if thumbnail_id
+      sets << "thumbnail_id = $#{args.size + 1}"
+      args << thumbnail_id
+    end
+    if video_count
+      sets << "video_count = $#{args.size + 1}"
+      args << video_count
+    end
+    if title
+      sets << "title = $#{args.size + 1}"
+      args << title
+    end
+
+    return if sets.empty?
+
+    sets << "updated = $#{args.size + 1}"
+    args << Time.utc
+    args << id
+
+    PG_DB.exec("UPDATE playlists SET #{sets.join(", ")} WHERE id = $#{args.size}", args: args)
+  end
+
   def update_description(id : String, description)
     request = <<-SQL
       UPDATE playlists

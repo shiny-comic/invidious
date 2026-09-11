@@ -406,6 +406,28 @@ module Invidious::Routes::Playlists
       return error_template(500, ex)
     end
 
+    if (user = env.get?("user").try &.as(User)) && !plid.starts_with?("IV") &&
+        (local = Invidious::Database::Playlists.select(id: plid)) &&
+        local.author == user.email
+
+      new_thumb = playlist.thumbnail.try &.match(/vi\/([a-zA-Z0-9_-]{11})/).try &.[1]
+      new_count = playlist.video_count
+      new_title = playlist.title
+
+      needs_update = (new_thumb && new_thumb != local.thumbnail_id) ||
+        (new_count != local.video_count) ||
+        (new_title != local.title)
+
+      if needs_update
+        Invidious::Database::Playlists.update_metadata(
+          plid,
+          thumbnail_id: new_thumb,
+          video_count: new_count,
+          title: new_title
+        )
+      end
+    end
+
     if playlist.is_a? InvidiousPlaylist
       page_count = (playlist.video_count / 100).to_i
       page_count += 1 if (playlist.video_count % 100) > 0
